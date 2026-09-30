@@ -98,3 +98,40 @@ export interface AuditEntry {
   reason: string;
   at: string;
 }
+
+export interface Group {
+  id: string;
+  name: string;
+  grade: string;
+  shiftId: string;
+  isActive: boolean;
+}
+
+export interface Subject {
+  id: string;
+  name: string;
+  shortName: string;
+  isActive: boolean;
+}
+
+export interface ActivityType {
+  id: string;
+  name: string;
+  /** Las actividades «de clase» exigen grupo y materia. */
+  isClass: boolean;
+  isActive: boolean;
+}
+
+/** Una celda del horario docente (la única fuente: el horario por grupo se deriva de aquí). */
+export interface Assignment {
+  /** `${schoolYearId}:${staffId}:${weekday}:${periodId}` */
+  id: string;
+  schoolYearId: string;
+  staffId: string;
+  weekday: number;
+  periodId: string;
+  groupId: string;
+  subjectId: string;
+  activityTypeId: string;
+  allowShared: boolean;
+}

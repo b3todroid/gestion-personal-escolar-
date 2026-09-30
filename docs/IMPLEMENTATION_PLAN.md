@@ -1,6 +1,6 @@
 # IMPLEMENTATION_PLAN
 
-> **D-8:** app local de un solo usuario. Fase 1 ahora = proyecto base + datos locales + asistente + respaldo (HECHA). Fase 2 = personal, categorías y horarios laborales (HECHA). Las demás fases siguen igual, sin autenticación/roles/RLS; reportes con impresión del navegador. Publicación con GitHub Actions (ya incluida).
+> **D-8:** app local de un solo usuario. Fase 1 ahora = proyecto base + datos locales + asistente + respaldo (HECHA). Fase 2 = personal, categorías y horarios laborales (HECHA). Fase 3 = grupos, materias, horarios docentes e importación CSV (HECHA; OCR/PDF de horarios sigue como extensión futura). Las demás fases siguen igual, sin autenticación/roles/RLS; reportes con impresión del navegador. Publicación con GitHub Actions (ya incluida).
 
 Regla al cerrar cada fase: `lint` + `typecheck` + `test` + `build` sin errores antes de avanzar. Ninguna función se da por terminada sin prueba.
 

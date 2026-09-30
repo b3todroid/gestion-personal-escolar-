@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 
-export type RoutePath = "/" | "/personal" | "/configuracion";
+export type RoutePath = "/" | "/personal" | "/grupos" | "/horarios" | "/configuracion";
+
+const ROUTES: readonly RoutePath[] = ["/", "/personal", "/grupos", "/horarios", "/configuracion"];
 
 function subscribe(cb: () => void) {
   window.addEventListener("hashchange", cb);
@@ -9,7 +11,7 @@ function subscribe(cb: () => void) {
 
 function current(): RoutePath {
   const path = window.location.hash.replace(/^#/, "") || "/";
-  return (["/", "/personal", "/configuracion"] as const).find((r) => r === path) ?? "/";
+  return ROUTES.find((r) => r === path) ?? "/";
 }
 
 /** Rutas con # para que funcione en GitHub Pages sin configurar el servidor. */

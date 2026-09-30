@@ -3,9 +3,11 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/data/db";
 import { saveSettings, savePeriods } from "@/data/settings";
 import { saveCategory } from "@/data/categories";
+import { saveActivityType } from "@/data/catalogs";
 import { exportBackup, parseBackup, restoreBackup } from "@/data/backup";
 import type { SchoolSettings } from "@/data/types";
 import type { PeriodInput } from "@/domain/periods";
+import { downloadText } from "@/ui/download";
 import { PeriodsEditor } from "@/ui/PeriodsEditor";
 import { Badge, Button, CheckField, ErrorBox, Field } from "@/ui/ui";
 
@@ -16,6 +18,7 @@ export function SettingsPage() {
       <SchoolSection />
       <PeriodsSection />
       <CategoriesSection />
+      <ActivityTypesSection />
       <BackupSection />
     </section>
   );
@@ -144,12 +147,7 @@ function BackupSection() {
   const download = () =>
     run(async () => {
       const data = await exportBackup(db);
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `respaldo-personal-escolar-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      downloadText(`respaldo-personal-escolar-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2), "application/json");
     });
   const restore = (file: File) =>
     run(async () => {
@@ -167,6 +165,35 @@ function BackupSection() {
       </div>
       <ErrorBox messages={errors} />
       <Saved ok={ok} />
+    </Card>
+  );
+}
+
+function ActivityTypesSection() {
+  const types = useLiveQuery(() => db.activityTypes.orderBy("name").toArray(), [], []);
+  const [name, setName] = useState("");
+  const [isClass, setIsClass] = useState(false);
+  const { errors, run } = useSaved();
+  return (
+    <Card title="Tipos de actividad del horario">
+      <ul className="flex flex-col gap-2">
+        {types.map((t) => (
+          <li key={t.id} className="flex items-center justify-between gap-2 rounded-lg border border-stone-200 p-2">
+            <span className="text-sm">
+              {t.name} {t.isClass ? <Badge tone="info">Exige grupo y materia</Badge> : null} {!t.isActive ? <Badge tone="off">– Desactivado</Badge> : null}
+            </span>
+            <Button variant="secondary" className="px-3 py-1.5 text-sm" onClick={() => run(() => saveActivityType(db, { ...t, isActive: !t.isActive }))}>
+              {t.isActive ? "Desactivar" : "Activar"}
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <div className="flex flex-col gap-3 rounded-lg bg-stone-50 p-3">
+        <Field label="Nuevo tipo de actividad" value={name} onChange={(e) => setName(e.target.value)} />
+        <CheckField label="Es una clase (exige grupo y materia)" checked={isClass} onChange={(e) => setIsClass(e.target.checked)} />
+        <ErrorBox messages={errors} />
+        <Button className="self-start" onClick={() => run(async () => { await saveActivityType(db, { name, isClass, isActive: true }); setName(""); setIsClass(false); })}>+ Agregar tipo</Button>
+      </div>
     </Card>
   );
 }

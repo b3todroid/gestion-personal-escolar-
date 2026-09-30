@@ -2,7 +2,7 @@
 
 App web de un solo usuario para el control administrativo del personal escolar: entradas, retardos, faltas, permisos, licencias, horarios, coberturas y reportes. **Sin inicio de sesión y sin servidor: los datos se guardan en el propio dispositivo** (funciona sin internet).
 
-**Estado:** Fases 1 y 2 de 8: configuración de la escuela (periodos, tolerancia, ciclo), categorías, personal y horarios laborales, respaldo. Ver `docs/IMPLEMENTATION_PLAN.md`.
+**Estado:** Fases 1 a 3 de 8: configuración de la escuela, categorías, personal y horarios laborales, grupos, materias, horarios docentes (por docente y por grupo) e importación desde CSV, respaldo. Se adapta solo a vertical u horizontal. Ver `docs/IMPLEMENTATION_PLAN.md`.
 
 ## Usar en tu computadora
 Requisito: Node.js 20 o superior.

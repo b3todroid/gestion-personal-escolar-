@@ -32,7 +32,8 @@ export async function restoreBackup(database: AppDb, file: BackupFile): Promise<
   const tables = BACKUP_TABLES.map((n) => database.table(n));
   await database.transaction("rw", tables, async () => {
     for (const name of BACKUP_TABLES) {
-      const rows = file.tables[name];
+      // Respaldos hechos antes de existir una tabla nueva la traen ausente: se restaura vacía.
+      const rows = file.tables[name] ?? (name === "settings" ? undefined : []);
       if (!Array.isArray(rows)) throw new Error(`Al respaldo le falta la sección «${name}».`);
       await database.table(name).clear();
       await database.table(name).bulkAdd(rows);
