@@ -8,6 +8,8 @@ export interface Signature {
 
 export interface SchoolSettings {
   id: "main";
+  /** Logo opcional como imagen en texto (data URL). */
+  logoDataUrl?: string;
   schoolName: string;
   cct: string;
   educationLevel: string;
@@ -117,6 +119,8 @@ export interface Subject {
 export interface ActivityType {
   id: string;
   name: string;
+  /** Cuenta como hora libre: esa persona puede cubrir a otro docente en ese periodo. */
+  isFree?: boolean;
   /** Las actividades «de clase» exigen grupo y materia. */
   isClass: boolean;
   isActive: boolean;
@@ -134,4 +138,100 @@ export interface Assignment {
   subjectId: string;
   activityTypeId: string;
   allowShared: boolean;
+}
+
+export type CountsAs = "absence" | "late" | "leave" | "permit" | "certificate" | "other";
+
+export interface IncidentType {
+  id: string;
+  name: string;
+  countsAs: CountsAs;
+  isActive: boolean;
+}
+
+export type IncidentScope = "full_day" | "periods" | "time_range";
+
+export interface Incident {
+  id: string;
+  staffId: string;
+  typeId: string;
+  startDate: string;
+  endDate: string;
+  scope: IncidentScope;
+  periodIds: string[];
+  startTime: string;
+  endTime: string;
+  notes: string;
+  /** Borrado lógico: «cancelled» conserva el registro y su historial. */
+  status: "active" | "cancelled";
+  cancelReason: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CoverageStatus = "uncovered" | "covered" | "not_required";
+
+/** Una clase/actividad afectada por una incidencia (se calcula del horario docente al guardar). */
+export interface AffectedClass {
+  /** `${incidentId}:${date}:${periodId}` */
+  id: string;
+  incidentId: string;
+  staffId: string;
+  date: string;
+  periodId: string;
+  assignmentId: string;
+  groupId: string;
+  subjectId: string;
+  activityTypeId: string;
+  isClass: boolean;
+  coverageStatus: CoverageStatus;
+}
+
+export interface AttendanceEntry {
+  /** `${staffId}:${date}` — una entrada por persona y día. */
+  id: string;
+  staffId: string;
+  date: string;
+  expectedTime: string;
+  arrivedTime: string;
+  toleranceApplied: number;
+  status: "on_time" | "late";
+  lateMinutes: number;
+  note: string;
+  /** Anulada (borrado lógico). */
+  voidedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Coverage {
+  id: string;
+  affectedId: string;
+  date: string;
+  periodId: string;
+  groupId: string;
+  subjectId: string;
+  absentStaffId: string;
+  coveringStaffId: string;
+  reason: string;
+  notes: string;
+  createdAt: string;
+  /** Vacío = vigente. */
+  canceledAt: string;
+}
+
+export interface DocumentRecord {
+  id: string;
+  incidentId: string;
+  name: string;
+  mime: string;
+  size: number;
+  blob: Blob;
+  createdAt: string;
+}
+
+export interface Holiday {
+  id: string;
+  date: string;
+  label: string;
 }

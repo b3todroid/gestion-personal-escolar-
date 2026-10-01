@@ -1,3 +1,4 @@
+import { enterDemo } from "@/data/mode";
 import { useState } from "react";
 import { db } from "@/data/db";
 import { createSchoolSetup, validateSetup, type SetupInput } from "@/data/setup";
@@ -94,6 +95,10 @@ export function SetupPage() {
 
         <ErrorBox messages={errors} />
         <Button onClick={submit} disabled={saving}>{saving ? "Guardando…" : "Guardar y comenzar"}</Button>
+        <div className="rounded-lg border border-stone-200 bg-white p-4 text-sm text-stone-700">
+          <p className="mb-2">¿Solo quieres probar la aplicación? Abre el modo demostración con datos ficticios; tus datos reales no se mezclan.</p>
+          <Button variant="secondary" onClick={() => enterDemo()}>Probar con datos de demostración</Button>
+        </div>
       </div>
     </main>
   );

@@ -120,7 +120,7 @@ export async function previewScheduleImport(database: AppDb, csvText: string, sc
 /** Aplica un archivo ya validado (todo o nada). */
 export async function applyScheduleImport(database: AppDb, preview: ImportPreview, schoolYearId: string): Promise<number> {
   if (preview.errors.length > 0) throw new Error("Corrige los errores del archivo antes de importar.");
-  await database.transaction("rw", [database.assignments, database.staff, database.periods, database.groups, database.subjects, database.activityTypes, database.audit], async () => {
+  await database.transaction("rw", [database.assignments, database.staff, database.periods, database.groups, database.subjects, database.activityTypes, database.audit, database.attendance, database.incidents, database.affected, database.coverages, database.workDays, database.incidentTypes, database.holidays, database.schoolYears, database.settings], async () => {
     for (const r of preview.rows) {
       await saveAssignment(database, { schoolYearId, staffId: r.staffId, weekday: r.weekday, periodId: r.periodId, groupId: r.groupId, subjectId: r.subjectId, activityTypeId: r.activityTypeId, allowShared: false, confirmInactive: true });
     }

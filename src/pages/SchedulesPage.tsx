@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/data/db";
 import { clearAssignment, saveAssignment } from "@/data/schedule";
+import { toCsv } from "@/domain/csv";
 import { applyScheduleImport, previewScheduleImport, scheduleTemplateCsv, type ImportPreview } from "@/data/scheduleImport";
 import type { Assignment, Period } from "@/data/types";
 import { WEEKDAYS } from "@/domain/time";
@@ -209,7 +210,18 @@ function ImportView() {
     if (!year) return;
     setMessage("");
     setFailure([]);
-    setPreview(await previewScheduleImport(db, await file.text(), year.id));
+    try {
+      let text: string;
+      if (/\.xlsx$/i.test(file.name)) {
+        const { readSheet } = await import("read-excel-file/browser");
+        const table = await readSheet(file);
+        text = toCsv(table.map((row) => row.map((c) => (c === null || c === undefined ? "" : c instanceof Date ? c.toISOString().slice(0, 10) : String(c)))));
+      } else text = await file.text();
+      setPreview(await previewScheduleImport(db, text, year.id));
+    } catch {
+      setPreview(null);
+      setFailure(["No se pudo leer el archivo. Usa la plantilla en CSV o un Excel (.xlsx) con las mismas columnas."]);
+    }
   };
   const confirm = async () => {
     if (!year || !preview) return;
@@ -224,11 +236,11 @@ function ImportView() {
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-stone-200 bg-white p-4">
-      <p className="text-sm text-stone-700">Carga horarios desde un archivo CSV (Excel → Guardar como → CSV). Primero se revisa todo y se muestran los errores; no se guarda nada hasta que confirmes. Cada fila reemplaza la celda de ese docente en ese día y periodo. Antes de importar, el personal, los grupos y las materias ya deben existir.</p>
+      <p className="text-sm text-stone-700">Carga horarios desde un archivo Excel (.xlsx) o CSV. Primero se revisa todo y se muestran los errores; no se guarda nada hasta que confirmes. Cada fila reemplaza la celda de ese docente en ese día y periodo. Antes de importar, el personal, los grupos y las materias ya deben existir.</p>
       <div className="flex flex-wrap gap-3">
         <Button variant="secondary" onClick={() => downloadText("plantilla-horarios.csv", scheduleTemplateCsv(), "text/csv")}>Descargar plantilla</Button>
-        <Button onClick={() => fileRef.current?.click()}>Elegir archivo CSV…</Button>
-        <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
+        <Button onClick={() => fileRef.current?.click()}>Elegir archivo (.xlsx o .csv)…</Button>
+        <input ref={fileRef} type="file" accept=".csv,text/csv,.xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
       </div>
       {message ? <p role="status" className="text-sm text-emerald-800">{message}</p> : null}
       <ErrorBox messages={failure} />

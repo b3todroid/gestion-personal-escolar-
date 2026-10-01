@@ -68,6 +68,7 @@ export function StaffPage() {
                 </span>
                 <span className="text-xs text-stone-500">{scheduleSummary(s)}</span>
               </button>
+              <a href={`#/ficha/${s.id}`} className="mt-1 inline-block px-1 text-sm font-medium text-emerald-800 underline">Ver ficha y resumen</a>
             </li>
           ))}
         </ul>

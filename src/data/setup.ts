@@ -1,6 +1,6 @@
 import type { AppDb } from "./db";
 import type { Period, SchoolSettings, SchoolYear, Shift, ShiftKind, StaffCategory } from "./types";
-import { defaultActivityTypes } from "./defaults";
+import { defaultActivityTypes, defaultIncidentTypes } from "./defaults";
 import { validatePeriods, type PeriodInput } from "@/domain/periods";
 
 /** Categorías iniciales (son datos editables, no reglas del código). */
@@ -70,7 +70,7 @@ export async function createSchoolSetup(database: AppDb, input: SetupInput): Pro
   const errors = validateSetup(input);
   if (errors.length > 0) throw new Error(errors[0]);
 
-  await database.transaction("rw", [database.settings, database.schoolYears, database.shifts, database.periods, database.categories, database.activityTypes], async () => {
+  await database.transaction("rw", [database.settings, database.schoolYears, database.shifts, database.periods, database.categories, database.activityTypes, database.incidentTypes], async () => {
     if ((await database.settings.count()) > 0) throw new Error("La escuela ya fue configurada.");
 
     const settings: SchoolSettings = {
@@ -109,5 +109,6 @@ export async function createSchoolSetup(database: AppDb, input: SetupInput): Pro
     await database.periods.bulkAdd(periods);
     await database.categories.bulkAdd(categories);
     await database.activityTypes.bulkAdd(defaultActivityTypes());
+    await database.incidentTypes.bulkAdd(defaultIncidentTypes());
   });
 }

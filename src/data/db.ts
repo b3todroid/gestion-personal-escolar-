@@ -1,6 +1,7 @@
 import Dexie, { type Table } from "dexie";
-import { defaultActivityTypes } from "./defaults";
-import type { ActivityType, Assignment, AuditEntry, Group, Period, SchoolSettings, SchoolYear, Shift, Staff, StaffCategory, Subject, WorkDay } from "./types";
+import { DEMO_DB_NAME, REAL_DB_NAME, isDemo } from "./mode";
+import { defaultActivityTypes, defaultIncidentTypes } from "./defaults";
+import type { ActivityType, AffectedClass, Assignment, AttendanceEntry, AuditEntry, Coverage, DocumentRecord, Group, Holiday, Incident, IncidentType, Period, SchoolSettings, SchoolYear, Shift, Staff, StaffCategory, Subject, WorkDay } from "./types";
 
 export class AppDb extends Dexie {
   declare settings: Table<SchoolSettings, string>;
@@ -15,8 +16,15 @@ export class AppDb extends Dexie {
   declare subjects: Table<Subject, string>;
   declare activityTypes: Table<ActivityType, string>;
   declare assignments: Table<Assignment, string>;
+  declare incidentTypes: Table<IncidentType, string>;
+  declare incidents: Table<Incident, string>;
+  declare affected: Table<AffectedClass, string>;
+  declare attendance: Table<AttendanceEntry, string>;
+  declare coverages: Table<Coverage, string>;
+  declare documents: Table<DocumentRecord, string>;
+  declare holidays: Table<Holiday, string>;
 
-  constructor(name = "gestion-personal-escolar") {
+  constructor(name = REAL_DB_NAME) {
     super(name);
     // Cada cambio de estructura se agrega como una nueva versión (migración local); nunca se edita una anterior.
     this.version(1).stores({
@@ -42,11 +50,28 @@ export class AppDb extends Dexie {
           await tx.table("activityTypes").bulkAdd(defaultActivityTypes());
         }
       });
+    this.version(3)
+      .stores({
+        incidentTypes: "id, name",
+        incidents: "id, staffId, startDate, endDate, typeId, status, [staffId+startDate]",
+        affected: "id, incidentId, staffId, date, groupId, coverageStatus, [date+periodId]",
+        attendance: "id, staffId, date",
+        coverages: "id, affectedId, date, coveringStaffId, [date+periodId]",
+        documents: "id, incidentId",
+        holidays: "id, &date",
+      })
+      .upgrade(async (tx) => {
+        if ((await tx.table("settings").count()) > 0) {
+          if ((await tx.table("incidentTypes").count()) === 0) await tx.table("incidentTypes").bulkAdd(defaultIncidentTypes());
+          // La actividad «Libre» del catálogo inicial cuenta como hora libre para coberturas.
+          await tx.table("activityTypes").filter((a: ActivityType) => a.name === "Libre").modify({ isFree: true });
+        }
+      });
   }
 }
 
-export const db = new AppDb();
+export const db = new AppDb(isDemo() ? DEMO_DB_NAME : REAL_DB_NAME);
 
 /** Nombres de las tablas incluidas en respaldos. */
-export const BACKUP_TABLES = ["settings", "schoolYears", "shifts", "periods", "categories", "staff", "workDays", "audit", "groups", "subjects", "activityTypes", "assignments"] as const;
+export const BACKUP_TABLES = ["settings", "schoolYears", "shifts", "periods", "categories", "staff", "workDays", "audit", "groups", "subjects", "activityTypes", "assignments", "incidentTypes", "incidents", "affected", "attendance", "coverages", "documents", "holidays"] as const;
 export type BackupTable = (typeof BACKUP_TABLES)[number];

@@ -7,9 +7,27 @@ export interface BackupFile {
   tables: Record<string, unknown[]>;
 }
 
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return `data:${blob.type || "application/octet-stream"};base64,${btoa(bin)}`;
+}
+
+function dataUrlToBlob(url: string): Blob {
+  const [head, body = ""] = url.split(",");
+  const mime = /data:([^;]*)/.exec(head)?.[1] || "application/octet-stream";
+  const bin = atob(body);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
 export async function exportBackup(database: AppDb): Promise<BackupFile> {
   const tables: Record<string, unknown[]> = {};
   for (const name of BACKUP_TABLES) tables[name] = await database.table(name).toArray();
+  // Los documentos adjuntos (Blob) viajan como texto dentro del respaldo.
+  tables.documents = await Promise.all((tables.documents as { blob: Blob }[]).map(async (d) => ({ ...d, blob: await blobToDataUrl(d.blob) })));
   return { app: "gestion-personal-escolar", version: 1, exportedAt: new Date().toISOString(), tables };
 }
 
@@ -36,7 +54,8 @@ export async function restoreBackup(database: AppDb, file: BackupFile): Promise<
       const rows = file.tables[name] ?? (name === "settings" ? undefined : []);
       if (!Array.isArray(rows)) throw new Error(`Al respaldo le falta la sección «${name}».`);
       await database.table(name).clear();
-      await database.table(name).bulkAdd(rows);
+      const prepared = name === "documents" ? rows.map((d) => { const x = d as { blob: unknown }; return { ...x, blob: typeof x.blob === "string" ? dataUrlToBlob(x.blob) : x.blob }; }) : rows;
+      await database.table(name).bulkAdd(prepared);
     }
   });
 }

@@ -1,6 +1,7 @@
 import type { AppDb } from "./db";
 import type { Assignment } from "./types";
 import { logAudit } from "./audit";
+import { recalcFutureForStaff } from "./incidents";
 import { cellId, findConflicts, type Cell } from "@/domain/schedule";
 import { WEEKDAYS } from "@/domain/time";
 
@@ -65,6 +66,7 @@ export async function saveAssignment(database: AppDb, input: AssignmentInput): P
     await database.assignments.put(record);
     await logAudit(database, { table: "assignments", recordId: id, action: before ? "update" : "create", summary: `Horario de ${person.fullName}: ${dayName(input.weekday)} ${period.name}${group ? ` → ${group.name}` : ""}`, before: before ?? null, after: record });
   });
+  await recalcFutureForStaff(database, input.staffId);
 }
 
 export async function clearAssignment(database: AppDb, schoolYearId: string, staffId: string, weekday: number, periodId: string): Promise<void> {
@@ -76,4 +78,5 @@ export async function clearAssignment(database: AppDb, schoolYearId: string, sta
     await database.assignments.delete(id);
     await logAudit(database, { table: "assignments", recordId: id, action: "deactivate", summary: `Se quitó del horario de ${person?.fullName ?? "?"}: ${dayName(weekday)} ${period?.name ?? ""}`, before, after: null });
   });
+  await recalcFutureForStaff(database, staffId);
 }
