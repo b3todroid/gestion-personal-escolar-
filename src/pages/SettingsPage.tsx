@@ -283,7 +283,7 @@ function HolidaysSection() {
 }
 
 function YearsSection() {
-  const years = useLiveQuery(() => db.schoolYears.orderBy("startsOn").reverse().toArray(), [], []);
+  const years = useLiveQuery(async () => (await db.schoolYears.toArray()).sort((a, b) => b.startsOn.localeCompare(a.startsOn)), [], []);
   const [f, setF] = useState({ name: "", startsOn: "", endsOn: "", makeCurrent: true, copy: true });
   const { errors, run } = useSaved();
   const latest = years[0];
